@@ -3,5 +3,5 @@ uvicorn>=0.30
 pydantic>=2.7
 sentence-transformers>=3.0
 chromadb>=0.5
-anthropic>=0.40
+google-genai>=1.0
 python-multipart>=0.0.9

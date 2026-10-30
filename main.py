@@ -1,12 +1,12 @@
-"""SkillGuard API: scans a Claude skill against known malicious patterns."""
+"""SkillGuard API: scans an agent skill against known malicious patterns."""
 
 import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from anthropic import Anthropic
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from google import genai
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
@@ -58,7 +58,7 @@ def health():
     return {
         "kb_loaded": state.kb is not None,
         "kb_error": state.kb_error,
-        "api_key_set": bool(os.environ.get("ANTHROPIC_API_KEY")),
+        "api_key_set": bool(os.environ.get("GEMINI_API_KEY")),
     }
 
 
@@ -84,15 +84,15 @@ def run_scan(skill_code: str) -> dict:
         raise HTTPException(status_code=413, detail=f"Skill exceeds {MAX_SKILL_CHARS} characters")
     if state.kb is None:
         raise HTTPException(status_code=503, detail=f"Knowledge base not loaded: {state.kb_error}")
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY is not set")
+    if not os.environ.get("GEMINI_API_KEY"):
+        raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not set")
 
     patterns = state.kb.retrieve(skill_code)
     try:
-        report = analyze_skill(Anthropic(), skill_code, patterns)
+        report = analyze_skill(genai.Client(), skill_code, patterns)
     except Exception as exc:
-        log.exception("Claude analysis failed")
-        raise HTTPException(status_code=502, detail=f"Claude analysis failed: {exc}")
+        log.exception("Gemini analysis failed")
+        raise HTTPException(status_code=502, detail=f"Gemini analysis failed: {exc}")
 
     return {
         **report.model_dump(),
