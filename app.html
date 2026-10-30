@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillGuard</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+    textarea { width: 100%; height: 260px; font-family: monospace; font-size: 13px; box-sizing: border-box; }
+    button { margin-top: .5rem; padding: .5rem 1.2rem; font-size: 15px; cursor: pointer; }
+    .flag { border-left: 4px solid #999; padding: .5rem .8rem; margin: .8rem 0; background: #fafafa; }
+    .critical { border-color: #b00020; } .high { border-color: #e65100; }
+    .medium { border-color: #f9a825; } .low { border-color: #2e7d32; }
+    pre { background: #f0f0f0; padding: .5rem; overflow-x: auto; white-space: pre-wrap; }
+    .verdict { font-size: 20px; font-weight: bold; }
+    .safe { color: #2e7d32; } .unsafe { color: #b00020; }
+    .error { color: #b00020; }
+  </style>
+</head>
+<body>
+  <h1>SkillGuard</h1>
+  <p>Paste a Claude skill (SKILL.md or its instructions) to scan it for prompt injection, data exfiltration, credential harvesting, privilege escalation and supply chain risks.</p>
+
+  <textarea id="skill" placeholder="Paste skill content here..."></textarea>
+  <br>
+  <button id="scan">Scan skill</button>
+
+  <div id="result"></div>
+
+  <script>
+    const resultEl = document.getElementById("result");
+    const button = document.getElementById("scan");
+
+    // Skill content is untrusted, so everything is written with textContent, never innerHTML.
+    function el(tag, text, className) {
+      const node = document.createElement(tag);
+      node.textContent = text;
+      if (className) node.className = className;
+      return node;
+    }
+
+    function render(report) {
+      resultEl.replaceChildren();
+
+      const verdict = el("p", report.safe_to_install ? "Safe to install" : "Not safe to install",
+        "verdict " + (report.safe_to_install ? "safe" : "unsafe"));
+      verdict.append(` (risk score ${report.overall_risk_score}/100)`);
+      resultEl.append(verdict);
+
+      resultEl.append(el("h3", "Summary"));
+      const summary = document.createElement("ul");
+      report.summary.forEach(item => summary.append(el("li", item)));
+      resultEl.append(summary);
+
+      resultEl.append(el("h3", `Risk flags (${report.risk_flags.length})`));
+      if (report.risk_flags.length === 0) {
+        resultEl.append(el("p", "No risk flags found."));
+      }
+      report.risk_flags.forEach(flag => {
+        const box = el("div", "", "flag " + flag.severity);
+        box.append(el("strong", `${flag.severity.toUpperCase()} - ${flag.category}`));
+        box.append(el("pre", flag.snippet));
+        box.append(el("p", flag.explanation));
+        box.append(el("p", "Recommendation: " + flag.recommendation));
+        resultEl.append(box);
+      });
+    }
+
+    button.addEventListener("click", async () => {
+      const skillCode = document.getElementById("skill").value;
+      if (!skillCode.trim()) {
+        resultEl.replaceChildren(el("p", "Please paste a skill first.", "error"));
+        return;
+      }
+
+      button.disabled = true;
+      resultEl.replaceChildren(el("p", "Scanning..."));
+      try {
+        const res = await fetch("/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ skill_code: skillCode }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          resultEl.replaceChildren(el("p", `Error ${res.status}: ${data.detail}`, "error"));
+        } else {
+          render(data);
+        }
+      } catch (err) {
+        resultEl.replaceChildren(el("p", "Request failed: " + err.message, "error"));
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+.env
+malicious_patterns.json.bak
