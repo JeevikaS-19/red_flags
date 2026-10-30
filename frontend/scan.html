@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan a skill · Red Flags</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+</head>
+<body class="platform">
+  <header class="topbar">
+    <a href="index.html" class="brand">🚩 Red Flags</a>
+  </header>
+
+  <div class="layout">
+    <!-- Left: input and scan -->
+    <section class="panel input-panel" aria-label="Scan input">
+      <div class="tabs" role="tablist">
+        <button class="tab is-active" role="tab" data-tab="paste" aria-selected="true">Paste code</button>
+        <button class="tab" role="tab" data-tab="upload" aria-selected="false">Upload file</button>
+        <button class="tab" role="tab" data-tab="github" aria-selected="false">GitHub repo</button>
+      </div>
+
+      <div class="tab-panel" data-panel="paste">
+        <textarea id="skill-text" rows="14" placeholder="Paste your SKILL.md file content here..."></textarea>
+      </div>
+
+      <div class="tab-panel" data-panel="upload" hidden>
+        <label class="dropzone" id="dropzone">
+          <input type="file" id="skill-file" accept=".md,.txt">
+          <span id="file-label">Drop a .md or .txt file here, or click to choose one</span>
+        </label>
+      </div>
+
+      <div class="tab-panel" data-panel="github" hidden>
+        <input type="text" id="repo-input" placeholder="https://github.com/user/repo or user/repo" autocomplete="off">
+        <p class="hint">Public repos only. We scan the text files in the repo.</p>
+      </div>
+
+      <button class="btn btn-scan" id="scan-btn">Scan</button>
+    </section>
+
+    <!-- Right: results -->
+    <section class="panel results-panel" aria-live="polite" id="results">
+      <div id="state-empty" class="state">
+        <p class="muted">Your results will show up here.</p>
+      </div>
+
+      <div id="state-loading" class="state" hidden>
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Analyzing...</p>
+      </div>
+
+      <div id="state-error" class="state" hidden>
+        <p class="error" id="error-text"></p>
+      </div>
+
+      <div id="state-results" hidden>
+        <h2 class="section-title">What this skill does</h2>
+        <ul id="summary" class="summary"></ul>
+
+        <h2 class="section-title">Risk score</h2>
+        <div class="score-row">
+          <span class="score-number" id="score-number">0</span><span class="score-max">/100</span>
+        </div>
+        <div class="score-bar"><div class="score-fill" id="score-fill"></div></div>
+        <p class="verdict" id="verdict"></p>
+
+        <div class="tabs results-tabs" role="tablist">
+          <button class="tab is-active" role="tab" data-result-tab="flags" aria-selected="true">Flags</button>
+          <button class="tab" role="tab" data-result-tab="personalize" aria-selected="false">Personalize</button>
+        </div>
+
+        <div class="result-tab" data-result-panel="flags">
+          <div id="flags"></div>
+        </div>
+
+        <div class="result-tab" data-result-panel="personalize" hidden>
+          <p class="muted">Personalized fixes are coming soon.</p>
+          <button class="btn btn-outline-dark" disabled>Apply changes (coming soon)</button>
+        </div>
+
+        <div class="result-actions">
+          <button class="btn btn-outline-dark" id="copy-btn">Copy results</button>
+          <button class="btn btn-scan" id="again-btn">Scan Another Skill</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="scan.js"></script>
+</body>
+</html>

@@ -6,18 +6,20 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from google import genai
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from analyzer import analyze_skill
+from github_fetch import GitHubError, fetch_repo_text, parse_repo
 from rag import KnowledgeBase
 
 log = logging.getLogger("skillguard")
 logging.basicConfig(level=logging.INFO)
 
 MAX_SKILL_CHARS = 200_000
-APP_HTML = Path(__file__).parent / "app.html"
+FRONTEND_DIR = Path(__file__).parent / "frontend"
 
 
 class AppState:
@@ -43,14 +45,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="SkillGuard", lifespan=lifespan)
 
+# The frontend is hosted separately (Netlify) and calls this API from another origin.
+# Set ALLOWED_ORIGINS to a comma-separated list, e.g. https://red-flags.netlify.app
+allowed_origins = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+if allowed_origins:
+    app.add_middleware(CORSMiddleware, allow_origins=allowed_origins, allow_methods=["*"], allow_headers=["*"])
+
 
 class ScanRequest(BaseModel):
     skill_code: str
-
-
-@app.get("/")
-def index():
-    return FileResponse(APP_HTML)
 
 
 @app.get("/health")
@@ -79,13 +82,21 @@ async def scan_file(file: UploadFile = File(...)):
 
 def run_scan(skill_code: str) -> dict:
     if not skill_code.strip():
-        raise HTTPException(status_code=400, detail="skill_code is empty")
-    if len(skill_code) > MAX_SKILL_CHARS:
+        raise HTTPException(status_code=400, detail="Paste some skill code, upload a file, or enter a repo first.")
+
+    repo = parse_repo(skill_code)
+    if repo is None and len(skill_code) > MAX_SKILL_CHARS:
         raise HTTPException(status_code=413, detail=f"Skill exceeds {MAX_SKILL_CHARS} characters")
     if state.kb is None:
         raise HTTPException(status_code=503, detail=f"Knowledge base not loaded: {state.kb_error}")
     if not os.environ.get("GEMINI_API_KEY"):
         raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not set")
+
+    if repo is not None:
+        try:
+            skill_code = fetch_repo_text(*repo)
+        except GitHubError as exc:
+            raise HTTPException(status_code=exc.status, detail=str(exc))
 
     patterns = state.kb.retrieve(skill_code)
     try:
@@ -101,3 +112,8 @@ def run_scan(skill_code: str) -> dict:
             for p in patterns
         ],
     }
+
+
+# Serve the frontend for local runs. On Netlify the same folder is deployed as a static site.
+# Mounted last so the API routes above take priority.
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
