@@ -1,0 +1,673 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Flags - AI Skill Security Scanner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #e5e5e5;
+            overflow-x: hidden;
+        }
+
+        /* ==================== SECTION 1: HERO ==================== */
+        .section-1 {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #0f0f0f;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #particleCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .hero-title {
+            font-size: 160px;
+            font-weight: 900;
+            letter-spacing: 12px;
+            color: #8b3a3a;
+            text-shadow:
+                2px 2px 0px #6b2a2a,
+                4px 4px 0px #4b1a1a,
+                6px 6px 0px #2b0a0a,
+                8px 8px 15px rgba(0, 0, 0, 0.5);
+            font-family: 'Courier New', monospace;
+            background: repeating-linear-gradient(
+                45deg,
+                #c41e1e,
+                #c41e1e 3px,
+                #8b3a3a 3px,
+                #8b3a3a 6px,
+                #a02020 6px,
+                #a02020 9px
+            );
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% -200%; }
+            50% { background-position: 200% 200%; }
+            100% { background-position: -200% -200%; }
+        }
+
+        .hero-tagline {
+            font-size: 18px;
+            color: #b0b0b0;
+            font-weight: 300;
+            letter-spacing: 1px;
+            margin-top: 10px;
+            max-width: 500px;
+        }
+
+        /* ==================== SECTION 2: PROBLEM ==================== */
+        .section-2 {
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+            padding: 80px 60px;
+            background: #1a1a1a;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .problem-left {
+            display: flex;
+            flex-direction: column;
+            gap: 60px;
+            z-index: 2;
+            position: relative;
+        }
+
+        .problem-headline {
+            font-size: 56px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        .problem-copy {
+            font-size: 18px;
+            line-height: 1.8;
+            color: #d0d0d0;
+            max-width: 500px;
+        }
+
+        .source-cite {
+            padding: 20px;
+            background: rgba(196, 30, 30, 0.08);
+            border-left: 3px solid #c41e1e;
+            border-radius: 4px;
+        }
+
+        .source-cite-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #c41e1e;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .source-cite-text {
+            font-size: 16px;
+            color: #b0b0b0;
+            line-height: 1.6;
+        }
+
+        .source-cite-link {
+            display: inline-block;
+            margin-top: 12px;
+            color: #c41e1e;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            border-bottom: 1px solid #c41e1e;
+            transition: all 0.3s ease;
+        }
+
+        .source-cite-link:hover {
+            color: #ff4444;
+            border-color: #ff4444;
+        }
+
+        .animation-container {
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+        }
+
+        #flagCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* ==================== SECTION 3: SOLUTION ==================== */
+        .section-3 {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #0f0f0f;
+            position: relative;
+            overflow: hidden;
+            padding: 60px 40px;
+        }
+
+        #solutionCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+        }
+
+        .solution-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 700px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 50px;
+        }
+
+        .solution-text {
+            font-size: 32px;
+            line-height: 1.6;
+            color: #e5e5e5;
+            min-height: 150px;
+            font-weight: 500;
+        }
+
+        .solution-text span.typed {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .start-btn {
+            padding: 18px 50px;
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #c41e1e 0%, #8b0000 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(196, 30, 30, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(196, 30, 30, 0.4);
+        }
+
+        .start-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 1024px) {
+            .section-2 {
+                grid-template-columns: 1fr;
+                gap: 40px;
+                padding: 60px 40px;
+            }
+
+            .hero-title {
+                font-size: 80px;
+                letter-spacing: 4px;
+            }
+
+            .problem-headline {
+                font-size: 40px;
+            }
+
+            .solution-text {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .section-1 {
+                height: auto;
+                min-height: 100vh;
+                padding: 60px 20px;
+            }
+
+            .hero-title {
+                font-size: 56px;
+                letter-spacing: 2px;
+            }
+
+            .section-2 {
+                grid-template-columns: 1fr;
+                padding: 60px 20px;
+                gap: 60px;
+            }
+
+            .problem-headline {
+                font-size: 32px;
+            }
+
+            .section-3 {
+                padding: 40px 20px;
+            }
+
+            .solution-text {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- SECTION 1: HERO -->
+    <section class="section-1">
+        <canvas id="particleCanvas"></canvas>
+        <div class="hero-content">
+            <h1 class="hero-title">RED FLAGS</h1>
+            <p class="hero-tagline">We find the red flags in your skills</p>
+        </div>
+    </section>
+
+    <!-- SECTION 2: PROBLEM -->
+    <section class="section-2">
+        <div class="problem-left">
+            <div>
+                <h2 class="problem-headline">The Problem</h2>
+                <p class="problem-copy">
+                    AI agent skills are everywhere. But 26% have vulnerabilities, and 90% of popular skills failed security audits. Most people just install based on popularity—without checking what's inside.
+                </p>
+            </div>
+            <div class="source-cite">
+                <div class="source-cite-label">Research</div>
+                <div class="source-cite-text">
+                    "AI skill marketplaces show a substantial share of skills contain vulnerabilities, with attackers hiding instructions, exfiltrating data, harvesting credentials, or loading remote payloads."
+                </div>
+                <a href="#" class="source-cite-link">View full report →</a>
+            </div>
+        </div>
+
+        <div class="animation-container">
+            <canvas id="flagCanvas"></canvas>
+        </div>
+    </section>
+
+    <!-- SECTION 3: SOLUTION -->
+    <section class="section-3">
+        <canvas id="solutionCanvas"></canvas>
+        <div class="solution-content">
+            <div class="solution-text" id="solutionText"></div>
+            <button class="start-btn" onclick="window.location.href='#start'">Start Scanning</button>
+        </div>
+    </section>
+
+    <script>
+        // ==================== PARTICLE BACKGROUND (SECTION 1) ====================
+        const particleCanvas = document.getElementById('particleCanvas');
+        const particleCtx = particleCanvas.getContext('2d');
+
+        particleCanvas.width = window.innerWidth;
+        particleCanvas.height = window.innerHeight;
+
+        const particles = [];
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * particleCanvas.width;
+                this.y = Math.random() * particleCanvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.5;
+                this.speedY = (Math.random() - 0.5) * 0.5;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0) this.x = particleCanvas.width;
+                if (this.x > particleCanvas.width) this.x = 0;
+                if (this.y < 0) this.y = particleCanvas.height;
+                if (this.y > particleCanvas.height) this.y = 0;
+            }
+
+            draw() {
+                particleCtx.fillStyle = `rgba(196, 30, 30, ${this.opacity})`;
+                particleCtx.beginPath();
+                particleCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                particleCtx.fill();
+            }
+        }
+
+        for (let i = 0; i < 80; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+
+        animateParticles();
+
+        window.addEventListener('resize', () => {
+            particleCanvas.width = window.innerWidth;
+            particleCanvas.height = window.innerHeight;
+        });
+
+        // ==================== FLAG FALLING ANIMATION (SECTION 2) ====================
+        const flagCanvas = document.getElementById('flagCanvas');
+        const flagCtx = flagCanvas.getContext('2d');
+
+        flagCanvas.width = flagCanvas.offsetWidth;
+        flagCanvas.height = flagCanvas.offsetHeight;
+
+        const flags = [];
+        let flagSpawnRate = 0;
+
+        class Flag {
+            constructor() {
+                this.x = Math.random() * flagCanvas.width;
+                this.y = -60;
+                this.velocityY = Math.random() * 2 + 1.5;
+                this.velocityX = (Math.random() - 0.5) * 0.3;
+                this.rotation = (Math.random() - 0.5) * 0.3;
+                this.color = '#c41e1e';
+                this.landed = false;
+            }
+
+            update() {
+                this.y += this.velocityY;
+                this.x += this.velocityX;
+
+                if (this.y > flagCanvas.height - 40 && !this.landed) {
+                    this.landed = true;
+                    this.velocityY = 0;
+                    this.y = flagCanvas.height - 40;
+                }
+
+                if (this.y > flagCanvas.height) {
+                    this.y = -60;
+                    this.x = Math.random() * flagCanvas.width;
+                    this.velocityX = (Math.random() - 0.5) * 0.3;
+                    this.landed = false;
+                }
+            }
+
+            draw() {
+                flagCtx.save();
+                flagCtx.translate(this.x, this.y);
+
+                // Pole
+                flagCtx.strokeStyle = '#333';
+                flagCtx.lineWidth = 3;
+                flagCtx.beginPath();
+                flagCtx.moveTo(0, 0);
+                flagCtx.lineTo(0, 40);
+                flagCtx.stroke();
+
+                // Flag banner
+                flagCtx.save();
+                flagCtx.translate(0, 5);
+                flagCtx.rotate(this.rotation);
+                flagCtx.fillStyle = this.color;
+                flagCtx.fillRect(0, -8, 25, 16);
+                flagCtx.strokeStyle = '#8b0000';
+                flagCtx.lineWidth = 1;
+                flagCtx.strokeRect(0, -8, 25, 16);
+                flagCtx.restore();
+
+                flagCtx.restore();
+            }
+        }
+
+        function drawGrassField() {
+            const gradient = flagCtx.createLinearGradient(0, 0, 0, flagCanvas.height);
+            gradient.addColorStop(0, '#2a5a2a');
+            gradient.addColorStop(0.5, '#1f4a1f');
+            gradient.addColorStop(1, '#1a3a1a');
+            flagCtx.fillStyle = gradient;
+            flagCtx.fillRect(0, 0, flagCanvas.width, flagCanvas.height);
+
+            // Add grass texture
+            for (let i = 0; i < 100; i++) {
+                const x = Math.random() * flagCanvas.width;
+                const y = Math.random() * flagCanvas.height;
+                flagCtx.strokeStyle = `rgba(100, 200, 100, ${Math.random() * 0.2})`;
+                flagCtx.lineWidth = 1;
+                flagCtx.beginPath();
+                flagCtx.moveTo(x, y);
+                flagCtx.lineTo(x + Math.random() * 3, y + Math.random() * 5);
+                flagCtx.stroke();
+            }
+        }
+
+        function animateFlags() {
+            flagCtx.clearRect(0, 0, flagCanvas.width, flagCanvas.height);
+            drawGrassField();
+
+            flagSpawnRate++;
+            if (flagSpawnRate > 40) {
+                flags.push(new Flag());
+                flagSpawnRate = 0;
+            }
+
+            flags.forEach((flag, index) => {
+                flag.update();
+                flag.draw();
+            });
+
+            requestAnimationFrame(animateFlags);
+        }
+
+        animateFlags();
+
+        // ==================== SOLUTION TEXT TYPING + FLAG ANIMATION (SECTION 3) ====================
+        const solutionCanvas = document.getElementById('solutionCanvas');
+        const solutionCtx = solutionCanvas.getContext('2d');
+        const solutionText = document.getElementById('solutionText');
+
+        solutionCanvas.width = window.innerWidth;
+        solutionCanvas.height = window.innerHeight;
+
+        const solutionFlags = [];
+        let typingStarted = false;
+        let observerSetUp = false;
+
+        class SolutionFlag {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 25;
+                this.height = 35;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.05;
+                this.color = '#c41e1e';
+                this.transitionToGreen = false;
+                this.greenProgress = 0;
+            }
+
+            update() {
+                this.rotation += this.rotationSpeed;
+                if (this.transitionToGreen) {
+                    this.greenProgress = Math.min(this.greenProgress + 0.02, 1);
+                }
+            }
+
+            draw() {
+                solutionCtx.save();
+                solutionCtx.translate(this.x, this.y);
+                solutionCtx.rotate(this.rotation);
+
+                const r = Math.round(196 - (196 - 34) * this.greenProgress);
+                const g = Math.round(30 + (163 - 30) * this.greenProgress);
+                const b = Math.round(30 + (74 - 30) * this.greenProgress);
+
+                solutionCtx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                solutionCtx.fillRect(0, 0, this.width, this.height);
+
+                solutionCtx.fillStyle = `rgba(0, 0, 0, 0.1)`;
+                solutionCtx.fillRect(2, 2, this.width - 4, this.height - 4);
+
+                solutionCtx.restore();
+            }
+        }
+
+        function initializeSolutionFlags() {
+            const cols = Math.floor(window.innerWidth / 60);
+            const rows = Math.floor(window.innerHeight / 60);
+            solutionFlags.length = 0;
+
+            for (let i = 0; i < cols * rows; i++) {
+                const x = (i % cols) * 60 + Math.random() * 30;
+                const y = Math.floor(i / cols) * 60 + Math.random() * 30;
+                solutionFlags.push(new SolutionFlag(x, y));
+            }
+        }
+
+        initializeSolutionFlags();
+
+        function animateSolution() {
+            solutionCtx.clearRect(0, 0, solutionCanvas.width, solutionCanvas.height);
+            solutionCtx.fillStyle = 'rgba(15, 15, 15, 0.7)';
+            solutionCtx.fillRect(0, 0, solutionCanvas.width, solutionCanvas.height);
+
+            solutionFlags.forEach(flag => {
+                flag.update();
+                flag.draw();
+            });
+
+            requestAnimationFrame(animateSolution);
+        }
+
+        animateSolution();
+
+        const textContent = "Red Flags scans your skills instantly. You get what it does, the risk score, and the red flags. Then you decide.";
+
+        function playTungSound() {
+            // Create a quick beep sound with Web Audio API
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+
+            oscillator.frequency.value = 600;
+            gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        function typeOutText() {
+            let index = 0;
+            let wordIndex = 0;
+            const words = textContent.split(' ');
+            let flagPairIndex = 0;
+
+            function typeWord() {
+                if (wordIndex < words.length) {
+                    const word = words[wordIndex];
+                    let charIndex = 0;
+
+                    function typeChar() {
+                        if (charIndex < word.length) {
+                            solutionText.innerHTML += word[charIndex];
+                            charIndex++;
+                            setTimeout(typeChar, 80);
+                        } else {
+                            if (wordIndex < words.length - 1) {
+                                solutionText.innerHTML += ' ';
+                            }
+                            wordIndex++;
+                            setTimeout(typeWord, 50);
+
+                            // Every 3 words, turn green a pair of flags
+                            if (wordIndex % 3 === 0 && flagPairIndex < solutionFlags.length) {
+                                playTungSound();
+                                // Turn two flags green
+                                solutionFlags[flagPairIndex].transitionToGreen = true;
+                                if (flagPairIndex + 1 < solutionFlags.length) {
+                                    solutionFlags[flagPairIndex + 1].transitionToGreen = true;
+                                }
+                                flagPairIndex += 2;
+                            }
+                        }
+                    }
+
+                    typeChar();
+                }
+            }
+
+            typeWord();
+        }
+
+        // Start typing when section 3 is in view
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !typingStarted) {
+                    typingStarted = true;
+                    typeOutText();
+                }
+            });
+        }, { threshold: 0.5 });
+
+        observer.observe(document.querySelector('.section-3'));
+
+        window.addEventListener('resize', () => {
+            solutionCanvas.width = window.innerWidth;
+            solutionCanvas.height = window.innerHeight;
+            initializeSolutionFlags();
+        });
+    </script>
+</body>
+</html>
+</body></html>

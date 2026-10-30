@@ -10,13 +10,14 @@
 
 | Area | Result |
 |---|---|
-| Automated test suite (pytest) | **68 of 68 passed** in 13.4 s (4 modules) |
-| Live validation on labelled skills | **8 of 8 classified correctly** (5 malicious flagged unsafe, 3 clean passed safe) |
-| Live scan time | 1.7 to 4.9 s per scan, average 2.5 s |
-| Live GitHub repository scan | Worked (`octocat/Spoon-Knife`, 3.0 s, score 0, safe) |
-| Browser tests, scan interface | 19 of 19 checks passed (includes one real, unmocked scan) |
-| Browser tests, demo page | 20 of 20 checks passed |
-| Defects found and fixed during testing | 9 (section 8) |
+| Automated test suite (pytest) | **76 of 76 passed** in about 18 s (4 modules) |
+| JavaScript unit tests (node:test) | **9 of 9 passed** (the logic that applies suggested edits) |
+| Live validation on labelled skills | **8 of 8 classified correctly** (5 malicious flagged unsafe, 3 clean passed safe), repeated after each prompt change |
+| Live scan time | 5 to 25 s in the latest run, average 10.8 s (1.7 to 4.9 s, average 2.5 s in the first run; see section 7.3) |
+| Live GitHub repository scan | Worked (`octocat/Spoon-Knife`, score 0, safe) |
+| Browser tests, scan page and landing page | **49 of 49 checks passed**, including a real scan, applying the suggested edits, and a real re-scan of the cleaned skill |
+| Browser tests, demo page and walkthrough | 20 of 20 and 20 of 20 checks passed |
+| Defects found and fixed during testing | 11 (section 8) |
 
 **What this does and does not show.** Every component passed the checks designed for it, and the end-to-end path works against the real model. The labelled live sample is small (8 skills), so the 8 of 8 result demonstrates that the system works on representative cases. It is not a statistical estimate of accuracy. Limitations are listed in section 9.
 
@@ -40,14 +41,16 @@ Validation was organised in layers, from the cheapest and most deterministic che
 
 ## 3. Automated test suite
 
-Run with `python -m pytest tests`. Result: **68 passed, 0 failed, 0 skipped, 13.4 s.**
+Run with `python -m pytest tests`. Result: **76 passed, 0 failed, 0 skipped, about 18 s.**
 
 | Module | Tests | What it covers |
 |---|---|---|
 | `test_github_fetch.py` | 23 | Repo reference parsing (7 valid forms, 7 rejected forms), file selection and ordering, file-count cap, fetching with mocked HTTP, error mapping (404, 403, 429, 500), repo with no scannable files, network failure |
-| `test_analyzer.py` | 16 | JSON parsing (plain, code-fenced, invalid), score range validation, prompt contents (skill wrapped as untrusted, patterns included, evasion clause present), evasion enforcement, retry on 503, fallback model, all models unavailable, non-retryable errors, timeouts |
-| `test_api.py` | 15 | Scan of text and of a repo, plain text never triggers a GitHub fetch, error codes 400, 404, 413, 502, 503, file upload and non-UTF-8 upload, health endpoint, frontend pages served, CORS for allowed and disallowed origins |
+| `test_analyzer.py` | 21 | JSON parsing (plain, code-fenced, invalid), score range validation, prompt contents (skill wrapped as untrusted, patterns included, evasion clause present, permissions and suggested changes requested), the new report fields (accepted, default to empty, survive the evasion override), evasion enforcement, retry on 503, fallback model, all models unavailable, non-retryable errors, timeouts |
+| `test_api.py` | 18 | Scan of text and of a repo, plain text never triggers a GitHub fetch, error codes 400, 404, 413, 502, 503, file upload and non-UTF-8 upload, health endpoint, every frontend page, stylesheet and module served, JavaScript served with a JavaScript MIME type, permissions and suggested changes returned (and empty when the model omits them), CORS for allowed and disallowed origins |
 | `test_rag.py` | 14 | Chunking (empty, short, overlap, cap), knowledge base schema and unique IDs, evasion pattern present, loading all 16 patterns, retrieval ranking, low similarity for clean text, empty input, two knowledge bases in one process |
+
+**JavaScript unit tests** (`node --test tests/js/patch.test.mjs`, 9 tests) cover the code that applies suggested edits: exact and whitespace-tolerant matching, regex characters in the snippet treated literally, remove and replace, blank-line cleanup, edits that cannot be found being reported while the rest still apply, an unknown action treated as remove, and the original text never mutated.
 
 Key behaviours confirmed:
 
@@ -98,18 +101,22 @@ The demo runner (`demo/run_demo.py`) sent each skill in `demo/skills/` to the ru
 
 | Skill | Expected | Verdict | Score | Flags raised | Time |
 |---|---|---|---|---|---|
-| `bad_credential_theft.md` | unsafe | unsafe ✓ | 100 | credential harvesting ×2 (critical), prompt injection (high) | 4.9 s |
-| `bad_data_exfil.md` | unsafe | unsafe ✓ | 95 | data exfiltration (critical) | 2.2 s |
-| `bad_evasion.md` | unsafe | unsafe ✓ | 100 | evasion attempt (critical), data exfiltration (high) | 2.4 s |
-| `bad_remote_payload.md` | unsafe | unsafe ✓ | 100 | supply chain ×2 (critical) | 2.3 s |
-| `bad_session_sync.md` | unsafe | unsafe ✓ | 90 | data exfiltration (high) | 2.3 s |
-| `good_csv_formatter.md` | safe | safe ✓ | 0 | none | 2.0 s |
-| `good_git_commit_helper.md` | safe | safe ✓ | 0 | none | 1.8 s |
-| `good_meeting_notes.md` | safe | safe ✓ | 0 | none | 1.7 s |
+| `bad_credential_theft.md` | unsafe | unsafe ✓ | 100 | credential harvesting ×2 (critical) | 11.0 s |
+| `bad_data_exfil.md` | unsafe | unsafe ✓ | 95 | data exfiltration (critical), prompt injection (high) | 5.1 s |
+| `bad_evasion.md` | unsafe | unsafe ✓ | 100 | evasion attempt (critical), data exfiltration (high) | 7.6 s |
+| `bad_remote_payload.md` | unsafe | unsafe ✓ | 100 | supply chain ×2 (critical) | 25.5 s |
+| `bad_session_sync.md` | unsafe | unsafe ✓ | 95 | data exfiltration (high) | 15.4 s |
+| `good_csv_formatter.md` | safe | safe ✓ | 0 | none | 7.5 s |
+| `good_git_commit_helper.md` | safe | safe ✓ | 0 | none | 8.0 s |
+| `good_meeting_notes.md` | safe | safe ✓ | 0 | none | 5.9 s |
 
-**Result: 8 of 8 correct. Average 2.5 s.** No false positives on the clean skills, including the git helper that legitimately runs shell commands. No missed malicious skill.
+**Result: 8 of 8 correct, in both the first run and the run after the report gained permissions and suggested edits.** No false positives on the clean skills, including the git helper that legitimately runs shell commands, and no missed malicious skill. Average 10.8 s in the latest run (see section 7.3 for why this is slower than the first run's 2.5 s).
 
-**GitHub repository scan.** `octocat/Spoon-Knife`, a public repository, was fetched through the live GitHub API and scanned: score 0, safe, 3.0 s. The summary correctly described it as a README explaining how to fork a repository.
+Each scan in the latest run also returned the new fields. The malicious skills listed 2 to 4 permissions (for example network access, reading environment variables and SSH keys, and shell execution, each rated high) and 1 to 2 suggested edits. The clean skills listed only low-trust access, such as running `git diff`, and no edits.
+
+**Applying the edits, live.** In the browser, the credential-theft skill was scanned (score 100), the suggested edit was applied, which removed the malicious commands from the skill text, and the cleaned skill was scanned again with the real model: **score 0**. This was run once, so it shows the flow works, not that edits are reliable in general.
+
+**GitHub repository scan.** `octocat/Spoon-Knife`, a public repository, was fetched through the live GitHub API and scanned: score 0, safe. The summary correctly described it as a README explaining how to fork a repository.
 
 **Observations.**
 
@@ -125,7 +132,17 @@ The demo runner (`demo/run_demo.py`) sent each skill in `demo/skills/` to the ru
 
 ### 7.1 Browser tests (Playwright, Chromium)
 
-**Scan interface, 19 of 19 checks passed**, including:
+**Scan page and landing page, 49 of 49 checks passed** (the earlier 19-check run covered the first version of the scan page), including:
+
+- layout: the skill panel fills the left side, and the five result sections are stacked top to bottom at the same width, in the order Risk score, What's in it, What it takes, Red flags, Changes,
+- empty, loading (skeleton), error and filled states for the sections, with the server's own error message shown next to the Scan button,
+- **a real scan through the page with no mocking**, then applying the suggested edit, then undoing it, then applying it again and **re-scanning the cleaned skill with the real model**,
+- applying edits to an uploaded file moves the text into the Paste tab; for a GitHub repo, Apply is disabled with an explanation; edits whose text cannot be found are disabled,
+- landing page: three acts, 100 skills with 26 flagged, the counter reaching 26 as the flags turn red, text typing in progressively, and the canvas flags turning from red to green by the end (167,242 green pixels against 0 red),
+- reduced motion: the flag is paused, the counter shows 26 immediately, and the full text and button are shown,
+- mobile layouts with no horizontal overflow, and no JavaScript or console errors.
+
+An earlier run of the first scan page, **19 of 19 checks**, covered:
 
 - landing page title, heading, and a flag whose rendered shape changes over time (5 distinct frames in 5 samples),
 - the example scan plays once after it scrolls into view,
@@ -150,7 +167,9 @@ A flag snippet containing `<img src=x onerror="window.__xss=1">` was rendered th
 | `gemini-3.6-flash` | 2.6 s | 13 to 32 s | malicious: 100 / unsafe; benign: 0 / safe |
 | `gemini-3.5-flash-lite` | 0.7 s | 1 to 3 s | malicious: 100 / unsafe; benign: 0 / safe |
 
-The default model was changed from the slowest to the fastest after this measurement. The slower model was overloaded during testing and returned 503 errors, which also triggered the retry logic. Turning off the model's "thinking" budget made no meaningful difference (13.0 s against 16.6 s), so the delay was service latency, not model reasoning.
+The default model was changed from the slowest to the fastest after this measurement. These numbers are from the day the model was chosen.
+
+**Later in testing the same service was slower.** In the final run, scans of the same skills took 5 to 25 s (average 10.8 s) with no overload retries logged. A direct probe the same hour showed why: a trivial 5-token reply from `gemini-3.5-flash-lite` took 11.6 s (0.7 s earlier). The previous prompt took about 5 s on a skill that took 1.7 s before, so most of the slowdown is the service. The longer prompt and larger report (permissions and suggested edits) add roughly 1 to 3 s on top (5.1 s against 6.1 to 8.1 s for the same skill). Asking the model for shorter snippets did not change this measurably. Latency should be re-measured before any live demo. The slower model was overloaded during testing and returned 503 errors, which also triggered the retry logic. Turning off the model's "thinking" budget made no meaningful difference (13.0 s against 16.6 s), so the delay was service latency, not model reasoning.
 
 ### 7.4 Responsive and accessibility checks
 
@@ -171,14 +190,17 @@ Checked at 1366 px and 390 px widths. Interactive controls are real buttons and 
 | 7 | Mobile layout overflowed horizontally (three separate causes: grid column stretching, score block minimum width, long unbroken pattern names) | Browser overflow check | Allowed grid children and rows to shrink and wrap |
 | 8 | Example code lines were truncated on mobile, hiding the flagged text | Screenshot review | Lines wrap on narrow screens |
 | 9 | Test expectation wrong for chunk count (expected 4, correct is 3) | First pytest run | Test corrected to match the specified chunk step |
+| 10 | Typed message on the landing page reserved a fixed height, leaving a large gap above the button and risking a layout shift on narrow screens | Screenshot review | An invisible copy of the full text holds the final height, and the typed text is overlaid on it |
+| 11 | Two unrelated landing page elements shared the class name `pole` (the hero flag's pole and the 100-skill field), so styles and test selectors collided | Browser test counted 101 poles | Field cells renamed `skill-cell` |
 
-Defect 9 was an error in the test, not in the code. The other eight were defects in the product.
+Defect 9 was an error in the test, not in the code. The others were defects in the product.
 
 ---
 
 ## 9. Limitations and what was not validated
 
 - **Small labelled sample.** 8 skills (5 malicious, 3 clean) written for the demo. They are based on the documented attack patterns, so the test is not independent of the knowledge base. A larger benchmark with real flagged skills and skills the system has never seen is needed before claiming an accuracy figure.
+- **Suggested edits.** The model proposes the edits, and they were verified end to end on one skill only. A patched skill may no longer work as intended, and the edits are not guaranteed to remove every problem. The pure matching and patching code is unit-tested; the quality of the model's suggestions is not.
 - **Real-world flagged skills.** Only one externally graded skill was tried, and only its `SKILL.md`, which returned no flags. Scanning full repositories of flagged skills was not completed.
 - **Model variability.** The language model is not deterministic. The number of flags and the exact score vary between runs. Repeat runs were not systematically measured.
 - **Knowledge base examples.** 14 of 16 examples were not individually checked against their sources.
@@ -196,6 +218,7 @@ Defect 9 was an error in the test, not in the code. The other eight were defects
 ```
 # 1. Automated tests (no API key needed)
 python -m pytest tests -q --junitxml=tests/junit.xml
+node --test tests/js/patch.test.mjs
 
 # 2. Live validation (server running with GEMINI_API_KEY set)
 python -m uvicorn main:app --port 8001

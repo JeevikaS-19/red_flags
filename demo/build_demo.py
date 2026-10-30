@@ -2,7 +2,7 @@
 
 Inputs:  demo/results.json   (from run_demo.py)
          tests/junit.xml     (pytest --junitxml=tests/junit.xml)
-         frontend/styles.css (inlined so the page is one self-contained file)
+         frontend/css/*.css  (inlined so the page is one self-contained file)
 Output:  frontend/demo.html  (open it from disk, or deploy it with the site)
 """
 
@@ -15,6 +15,14 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 import analyzer  # noqa: E402  (for the model names shown on the page)
+
+
+CSS_FILES = ("tokens.css", "components.css", "platform.css")
+
+
+def base_css() -> str:
+    """The shared stylesheets, joined so a built page stays one self-contained file."""
+    return "\n".join((ROOT / "frontend" / "css" / name).read_text(encoding="utf-8") for name in CSS_FILES)
 
 
 def load_tests() -> dict:
@@ -45,7 +53,7 @@ def main() -> None:
     }
 
     template = (ROOT / "demo" / "demo_template.html").read_text(encoding="utf-8")
-    css = (ROOT / "frontend" / "styles.css").read_text(encoding="utf-8")
+    css = base_css()
     # "</" inside the embedded JSON must not end the script tag
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     html = template.replace("/*__BASE_CSS__*/", css).replace("/*__DATA__*/", payload)

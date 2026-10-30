@@ -1,6 +1,6 @@
 """Build the GitHub Pages walkthrough, docs/index.html.
 
-Same inputs as build_demo.py (demo/results.json, tests/junit.xml, frontend/styles.css),
+Same inputs as build_demo.py (demo/results.json, tests/junit.xml, frontend/css/*.css),
 plus the repo URL for the links. The output is one self-contained file, so GitHub Pages
 only needs to serve the docs/ folder.
 """
@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "demo"))
 
 import analyzer  # noqa: E402
-from build_demo import load_tests  # noqa: E402
+from build_demo import base_css, load_tests  # noqa: E402
 
 DEFAULT_REPO_URL = "https://github.com/JeevikaS-19/red_flags"
 
@@ -35,7 +35,7 @@ def main() -> None:
             "meta": {"model": analyzer.MODEL, "fallback": analyzer.FALLBACK_MODEL}}
 
     template = (ROOT / "demo" / "walkthrough_template.html").read_text(encoding="utf-8")
-    css = (ROOT / "frontend" / "styles.css").read_text(encoding="utf-8")
+    css = base_css()
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     html = (template.replace("/*__BASE_CSS__*/", css).replace("/*__DATA__*/", payload).replace("__REPO_URL__", repo_url()))
 

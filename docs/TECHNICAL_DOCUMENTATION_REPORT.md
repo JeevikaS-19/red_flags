@@ -13,12 +13,14 @@ AI agent "skills" (for example a `SKILL.md` file and its bundled scripts) are pl
 Red Flags checks a skill **before** it is installed. A user pastes code, uploads a file, or gives a public GitHub repository. The system returns:
 
 - a plain-language summary of what the skill does,
+- the access the skill asks for (files, shell commands, network, credentials) and how much trust each needs,
 - a risk score from 0 to 100,
 - a list of red flags, each with the exact quoted text, an explanation, and a recommendation,
+- suggested edits that would make the skill safer, which can be applied to the skill in one click,
 - a safe or unsafe verdict.
 
 **In scope:** text-based skills, repository scanning of text files, a web interface, a REST API.
-**Out of scope for this version:** executing skills, scanning binaries, user accounts, scan history, automated fixes (the "Personalize" tab is a placeholder).
+**Out of scope for this version:** executing skills, scanning binaries, user accounts, scan history. Suggested edits are applied to the text only; nothing is run.
 
 ---
 
@@ -68,7 +70,7 @@ The system is a retrieval-augmented generation (RAG) pipeline. A fixed knowledge
 2. The backend rejects empty or oversized input. If the text is a GitHub reference (`user/repo` or a `github.com` URL), it downloads the repository's text files and joins them with `=== FILE: path ===` headers.
 3. The skill is split into overlapping chunks. Each chunk is embedded and matched against the pattern collection. The best five patterns across all chunks are kept.
 4. The analyzer builds a prompt containing the skill (marked as untrusted) and the retrieved patterns, and calls Gemini in JSON mode.
-5. The reply is parsed and validated against a schema. If the report contains an `evasion_attempt` flag, the score is forced to 100 and the verdict to unsafe.
+5. The reply is parsed and validated against a schema. If the report contains an `evasion_attempt` flag, the score is forced to 100 and the verdict to unsafe. The permissions and suggested edits are passed through unchanged.
 6. The API returns the report plus the identifiers and similarity scores of the matched patterns.
 
 ---
@@ -121,7 +123,9 @@ Each pattern is embedded as `name. description. examples`. List fields are kept 
 
 **Prompt design.** A system prompt defines the reviewer role and the six flag categories. It states that the skill is untrusted data and that any instructions inside it must never be followed, which guards against prompt injection aimed at the scanner itself. The skill is wrapped in `<skill>` tags. An "evasion detection" section matches phrases such as "ignore this analysis", "don't flag", or "mark this as safe" by meaning, not only by exact wording.
 
-**Structured output.** The model is called in JSON mode. The reply is parsed (tolerating code fences) and validated with Pydantic: summary list, flags with category, severity, snippet, explanation and recommendation, an integer score from 0 to 100, and a boolean verdict. An invalid reply becomes a `502`.
+**Structured output.** The model is called in JSON mode. The reply is parsed (tolerating code fences) and validated with Pydantic: summary list, flags with category, severity, snippet, explanation and recommendation, an integer score from 0 to 100, a boolean verdict, and two optional lists. `permissions` holds the access the skill needs (name, detail, and a trust level of low, medium or high). `suggested_changes` holds proposed edits (the exact snippet, `remove` or `replace`, the replacement text, and a reason). The two lists default to empty, so older replies and recorded results still validate. An invalid reply becomes a `502`.
+
+The prompt asks for the shortest exact snippet that covers each problem, so the front end can find that text again in the skill and edit it.
 
 **Evasion rule enforced in code.** If any flag has the category `evasion_attempt`, the code sets the score to 100, the verdict to unsafe, and adds the note "Skill attempted to suppress security analysis". This does not depend on the model following the instruction, so a skill cannot talk its way out of the rule.
 
@@ -137,23 +141,35 @@ The module lists the repo tree through the GitHub API, selects text files (`.md 
 
 ### 3.6 Frontend (`frontend/`)
 
-Plain HTML, CSS, and JavaScript with no build step, so it can be deployed to any static host.
+Plain HTML, CSS, and ES modules with no build step, so it can be deployed to any static host. The scan page needs to be served over HTTP (browsers do not load modules from `file://`).
 
-| File | Role |
-|---|---|
-| `index.html` | Landing page: waving SVG flag, headline, call to action, example scan |
-| `scan.html`, `scan.js` | Scan page: three input methods, results panel |
-| `demo.html` | Self-contained demo page (recorded scans, test results) |
-| `styles.css` | Design tokens and components |
-| `motion.js` | Reduced-motion handling and scroll-triggered example scan |
-| `config.js` | `SKILLGUARD_API_BASE`, the URL of the backend |
+```
+frontend/
+  index.html            landing page            css/landing.css   js/landing.js + js/landing/*
+  scan.html             scan page               css/tokens.css  css/components.css  css/platform.css
+                                                js/main.js  api.js  dom.js  input-panel.js  patch.js
+                                                js/results/  section.js  verdict.js  about.js  needs.js  flags.js  changes.js
+  demo.html             generated, self-contained (recorded scans and test results)
+  config.js             SKILLGUARD_API_BASE, the URL of the backend
+```
 
-Behaviour:
+**Landing page.** Three full-screen acts, following the design reference in `docs/`:
 
-- Two-column layout on desktop (inputs 40%, results 60%), stacked on mobile.
-- Results show the summary, a score count-up with a colored meter and a flag marker, the verdict, and flag cards with quoted evidence.
+1. *Hero.* Slow red particles drift behind a large title and a waving SVG flag that rises and unfurls on load.
+2. *The problem.* The copy and research sources sit on the left. On the right is a field of 100 skills. When it scrolls into view, 26 flags turn red one at a time while a counter ticks to 26, matching the 26.1% of 31,132 skills found to contain a vulnerability.
+3. *The solution.* The message types out while a field of flags behind it turns from red to green, then the Start Scanning button appears.
+
+Animations run only while their section is on screen. With `prefers-reduced-motion` the finished state is shown immediately and the flag is paused. The reference's autoplay sound was left out.
+
+**Scan page.** The skill and the Scan button fill the whole left side. The right side is a stack of horizontal sections: *Risk score*, *What's in it*, *What it takes*, *Red flags*, and *Changes*. Each section is its own module built on a shared `createSection` component and exposes the same three methods (`reset`, `loading`, `render`), so a section can be changed, reordered, or added without touching the others. `api.js` owns the network calls and error messages, `input-panel.js` owns the left side, and `main.js` only wires them together.
+
+**Changes.** Each suggested edit is shown as a before and after, with a checkbox. *Apply* edits the skill text, puts it back in the left panel, and offers *Undo* and *Scan again*. Matching ignores differences in whitespace and line wrapping, and edits that cannot be located are marked and skipped. The matching logic lives in `patch.js` as pure functions with their own unit tests. Edits work on pasted or uploaded text; for a GitHub repo the section lists the edits and explains that they must be made in the repo.
+
+**Other behaviour.**
+
 - All skill-derived text is inserted with `textContent`, never `innerHTML`, so content inside a malicious skill cannot run script on the page.
-- Motion respects the `prefers-reduced-motion` setting: the flag animation pauses and the example scan shows its finished state.
+- Errors appear next to the Scan button with the server's own message.
+- The layout stacks on mobile and scrolls the results into view after a scan.
 
 ---
 
@@ -224,7 +240,9 @@ Not implemented: authentication, per-user rate limiting, request logging for aud
 - **Knowledge base provenance.** Examples were extracted with NotebookLM. Two rebuilt examples were verified against their sources; the remaining ones were not re-verified individually.
 - **Variability.** Repeated scans of the same skill can differ in the number of flags or the exact score, although verdicts were stable in testing.
 - **Language and format.** Text only. Obfuscated or encoded payloads, binaries, and images are not analysed.
-- **Planned:** the Personalize tab (suggested fixes), scan history, an API key or rate limit for the public deployment, scanning of private repositories, and a larger labelled benchmark.
+- **Suggested edits are proposals.** They come from the model, so they can be wrong, and a skill with edits applied may no longer do its job. They were checked on one skill with a live re-scan only: the cleaned skill went from a score of 100 to 0.
+- **Latency depends on the model service.** Scans took 1 to 3 s on the day the model was chosen. Later the same service took 5 to 25 s per scan, and even a trivial 5-token reply took 11.6 s. The larger report (permissions and edits) adds roughly 1 to 3 s.
+- **Planned:** scan history, an API key or rate limit for the public deployment, scanning of private repositories, editing repos directly, and a larger labelled benchmark.
 
 ---
 
@@ -236,9 +254,9 @@ rag.py                   chunking, embeddings, retrieval
 analyzer.py              prompt, Gemini call, validation, evasion rule
 github_fetch.py          GitHub repo fetching
 malicious_patterns.json  knowledge base (16 patterns)
-frontend/                web interface and demo page
-demo/                    sample skills, demo runner, demo page builder
-tests/                   automated test suite (68 tests)
+frontend/                web interface (modular CSS and JavaScript) and demo page
+demo/                    sample skills, demo runner, page builders
+tests/                   automated tests: 76 Python (pytest) and 9 JavaScript (node:test)
 docs/                    specifications and these reports
 requirements.txt  netlify.toml
 ```
