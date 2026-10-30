@@ -9,25 +9,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
-  <link rel="stylesheet" href="styles.css">
-  <script>document.documentElement.classList.add("js");</script>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/platform.css">
   <script src="config.js"></script>
 </head>
 <body class="platform">
+  <!-- Flag shape used by the small icons. -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-    <defs>
-      <linearGradient id="cloth" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#b91c1c"/>
-        <stop offset="0.55" stop-color="#dc2626"/>
-        <stop offset="1" stop-color="#ef4444"/>
-      </linearGradient>
-      <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#fff" stop-opacity="0"/>
-        <stop offset="0.5" stop-color="#fff" stop-opacity="0.3"/>
-        <stop offset="1" stop-color="#fff" stop-opacity="0"/>
-        <animateTransform attributeName="gradientTransform" type="translate" values="-1 0;1 0" dur="3.4s" repeatCount="indefinite"/>
-      </linearGradient>
-    </defs>
     <symbol id="flag" viewBox="0 0 140 190">
       <rect x="8" y="6" width="6" height="180" rx="3" fill="#1d2939"/>
       <path d="M14 14 C 44 0, 76 30, 128 10 L 128 82 C 76 102, 44 74, 14 88 Z" fill="currentColor"/>
@@ -41,9 +30,14 @@
     </a>
   </header>
 
-  <div class="layout">
-    <!-- Left: input and scan -->
-    <section class="panel input-panel" aria-label="Scan input">
+  <main class="workspace">
+    <!-- Left: the skill and the Scan button -->
+    <section class="skill-panel" data-skill-panel aria-label="Skill to scan">
+      <div class="panel-head">
+        <h1 class="panel-title">Skill</h1>
+        <button class="btn btn-ghost" type="button" data-clear>Clear</button>
+      </div>
+
       <div class="segmented" role="tablist">
         <button class="seg is-active" role="tab" data-tab="paste" aria-selected="true">Paste code</button>
         <button class="seg" role="tab" data-tab="upload" aria-selected="false">Upload file</button>
@@ -51,98 +45,30 @@
       </div>
 
       <div class="tab-panel" data-panel="paste">
-        <textarea id="skill-text" rows="14" spellcheck="false" aria-label="Skill code" placeholder="Paste your SKILL.md file content here..."></textarea>
+        <textarea data-text spellcheck="false" aria-label="Skill code" placeholder="Paste your SKILL.md file content here..."></textarea>
       </div>
 
       <div class="tab-panel" data-panel="upload" hidden>
-        <label class="dropzone" id="dropzone">
-          <input type="file" id="skill-file" accept=".md,.txt">
-          <span id="file-label">Drop a .md or .txt file here, or click to choose one</span>
+        <label class="dropzone" data-dropzone>
+          <input type="file" data-file accept=".md,.txt">
+          <span data-file-label>Drop a .md or .txt file here, or click to choose one</span>
         </label>
       </div>
 
       <div class="tab-panel" data-panel="github" hidden>
-        <input type="text" id="repo-input" spellcheck="false" aria-label="GitHub repo" placeholder="https://github.com/user/repo or user/repo" autocomplete="off">
+        <input type="text" data-repo spellcheck="false" autocomplete="off" aria-label="GitHub repo" placeholder="https://github.com/user/repo or user/repo">
         <p class="hint">Public repos only. We scan the text files in the repo.</p>
       </div>
 
-      <button class="btn btn-scan" id="scan-btn">Scan</button>
+      <p class="notice-error" data-error role="alert" hidden></p>
+      <p class="notice-info" data-info role="status" hidden></p>
+      <button class="btn btn-scan" type="button" data-scan>Scan</button>
     </section>
 
-    <!-- Right: results -->
-    <section class="panel results-panel" aria-live="polite" id="results">
-      <div id="state-empty" class="state">
-        <svg class="empty-flag" viewBox="0 0 140 190" aria-hidden="true"><use href="#flag"/></svg>
-        <p class="state-title">Nothing scanned yet</p>
-        <p class="muted">Paste a skill, upload a file, or enter a repo, then hit Scan. The report shows up here.</p>
-      </div>
+    <!-- Right: result sections are added here by js/main.js -->
+    <div class="results" id="results" aria-live="polite"></div>
+  </main>
 
-      <div id="state-loading" class="state" hidden>
-        <svg class="wave-flag loader-flag" viewBox="0 0 140 190" aria-hidden="true">
-          <rect x="8" y="6" width="6" height="180" rx="3" fill="#1d2939"/>
-          <circle cx="11" cy="6" r="5" fill="#101828"/>
-          <path fill="url(#cloth)" d="M14 14 C 44 0, 76 30, 128 10 L 128 82 C 76 102, 44 74, 14 88 Z">
-            <animate attributeName="d" dur="1.76s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.25;0.5;0.75;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1"
-                values="M14 14 C 44 0, 76 30, 128 10 L 128 82 C 76 102, 44 74, 14 88 Z;M14 14 C 44 -2, 76 -2, 128 14 L 128 86 C 76 70, 44 72, 14 88 Z;M14 14 C 44 30, 76 0, 128 20 L 128 92 C 76 72, 44 104, 14 88 Z;M14 14 C 44 30, 76 30, 128 14 L 128 86 C 76 102, 44 104, 14 88 Z;M14 14 C 44 0, 76 30, 128 10 L 128 82 C 76 102, 44 74, 14 88 Z"/>
-          </path>
-          <path fill="url(#sheen)" d="M14 14 C 44 0, 76 30, 128 10 L 128 82 C 76 102, 44 74, 14 88 Z">
-            <animate attributeName="d" dur="1.76s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.25;0.5;0.75;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1"
-                values="M14 14 C 44 0, 76 30, 128 10 L 128 82 C 76 102, 44 74, 14 88 Z;M14 14 C 44 -2, 76 -2, 128 14 L 128 86 C 76 70, 44 72, 14 88 Z;M14 14 C 44 30, 76 0, 128 20 L 128 92 C 76 72, 44 104, 14 88 Z;M14 14 C 44 30, 76 30, 128 14 L 128 86 C 76 102, 44 104, 14 88 Z;M14 14 C 44 0, 76 30, 128 10 L 128 82 C 76 102, 44 74, 14 88 Z"/>
-          </path>
-        </svg>
-        <p class="state-title">Analyzing...</p>
-        <p class="muted">Checking the skill against known attack patterns.</p>
-      </div>
-
-      <div id="state-error" class="state" hidden>
-        <div class="error-box" role="alert">
-          <p id="error-text"></p>
-        </div>
-      </div>
-
-      <div id="state-results" hidden>
-        <h2 class="section-title">What this skill does</h2>
-        <ul id="summary" class="summary"></ul>
-
-        <h2 class="section-title">Risk score</h2>
-        <div class="score-block" id="score-block" data-band="safe">
-          <div class="score-row">
-            <span class="score-number" id="score-number">0</span><span class="score-max">/100</span>
-          </div>
-          <div class="meter-wrap">
-            <svg class="meter-flag" viewBox="0 0 140 190" aria-hidden="true"><use href="#flag"/></svg>
-            <div class="meter" id="meter">
-              <div class="meter-fill"></div>
-            </div>
-          </div>
-          <p class="verdict" id="verdict"></p>
-        </div>
-
-        <div class="underline-tabs" role="tablist">
-          <button class="utab is-active" role="tab" data-result-tab="flags" aria-selected="true">
-            Flags <span class="count" id="flag-count">0</span>
-          </button>
-          <button class="utab" role="tab" data-result-tab="personalize" aria-selected="false">Personalize</button>
-        </div>
-
-        <div class="result-tab" data-result-panel="flags">
-          <div id="flags"></div>
-        </div>
-
-        <div class="result-tab" data-result-panel="personalize" hidden>
-          <p class="muted">Personalized fixes are coming soon.</p>
-          <button class="btn btn-ghost" disabled>Apply changes (coming soon)</button>
-        </div>
-
-        <div class="result-actions">
-          <button class="btn btn-ghost" id="copy-btn">Copy results</button>
-          <button class="btn btn-scan btn-inline" id="again-btn">Scan Another Skill</button>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <script src="motion.js"></script>
-  <script src="scan.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

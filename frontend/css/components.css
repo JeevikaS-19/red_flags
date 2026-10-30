@@ -1,0 +1,199 @@
+/* Reusable pieces: the waving flag, and everything that renders a scan result.
+   Shared by the scan page, the demo page, and the walkthrough. */
+
+/* ---------- Waving flag ---------- */
+
+.hero-art {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.hero-art::before {
+  content: "";
+  position: absolute;
+  width: min(420px, 90%);
+  aspect-ratio: 1;
+  bottom: 4%;
+  left: 50%;
+  transform: translateX(-46%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, #fee2e2 0%, rgba(254, 226, 226, 0) 68%);
+}
+
+.wave-flag { position: relative; display: block; height: auto; overflow: visible; }
+
+/* ---------- Score, meter, verdict ---------- */
+
+.score-block {
+  --band: var(--green-ink);
+  padding: 20px 22px 22px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.score-block[data-band="low"] { --band: var(--yellow-ink); }
+.score-block[data-band="mid"] { --band: var(--orange-ink); }
+.score-block[data-band="high"] { --band: var(--red); }
+
+.score-row { display: flex; align-items: baseline; gap: 6px; }
+
+.score-number {
+  font-family: var(--display);
+  font-size: 4.4rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--band);
+  font-variant-numeric: tabular-nums;
+}
+
+.score-max { font-size: 1.2rem; color: var(--muted); }
+
+.meter-wrap { --score: 0; position: relative; margin-top: 34px; }
+
+.meter {
+  height: 10px;
+  background: var(--track);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+/* The gradient spans the full track and is revealed up to the score, so low scores
+   stay green and only high scores reach red. */
+.meter-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green) 0%, var(--yellow) 40%, var(--orange) 70%, var(--red) 100%);
+  clip-path: inset(0 calc(100% - var(--score) * 1%) 0 0);
+  transition: clip-path 0.9s var(--ease);
+}
+
+.meter-flag {
+  position: absolute;
+  bottom: calc(100% - 3px);
+  left: calc(var(--score) * 1%);
+  width: 20px;
+  height: 27px;
+  margin-left: -3px;
+  color: var(--band);
+  transition: left 0.9s var(--ease);
+}
+
+.verdict {
+  margin: 18px 0 0;
+  padding: 10px 14px;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.verdict.is-safe { color: #166534; background: var(--green-soft); border: 1px solid var(--green-line); }
+.verdict.is-unsafe { color: #991b1b; background: var(--red-soft); border: 1px solid var(--red-line); }
+
+/* ---------- Counts, chips, badges ---------- */
+
+.count {
+  min-width: 22px;
+  padding: 0 7px;
+  font-size: 0.8rem;
+  line-height: 20px;
+  text-align: center;
+  color: var(--red-deep);
+  background: var(--red-soft);
+  border: 1px solid var(--red-line);
+  border-radius: 999px;
+}
+
+.chip {
+  padding: 1px 9px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 999px;
+  color: var(--ink-2);
+  background: var(--track);
+}
+
+.chip.low { color: var(--green-ink); background: var(--green-soft); }
+.chip.medium { color: var(--yellow-ink); background: var(--yellow-soft); }
+.chip.high { color: var(--red-deep); background: var(--red-soft); }
+
+/* ---------- Flag cards ---------- */
+
+.flag {
+  --sev: var(--muted);
+  --sev-soft: var(--surface-2);
+  --sev-ink: var(--ink-2);
+  margin-bottom: 14px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--sev);
+  border-radius: 6px 10px 10px 6px;
+}
+
+.flag:last-child { margin-bottom: 0; }
+
+.flag.critical { --sev: var(--red); --sev-soft: var(--red-soft); --sev-ink: var(--red-deep); }
+.flag.high { --sev: var(--orange); --sev-soft: var(--orange-soft); --sev-ink: var(--orange-ink); }
+.flag.medium { --sev: var(--yellow); --sev-soft: var(--yellow-soft); --sev-ink: var(--yellow-ink); }
+.flag.low { --sev: var(--green); --sev-soft: var(--green-soft); --sev-ink: var(--green-ink); }
+
+.flag-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.flag-icon-sm { width: 13px; height: 18px; flex: none; color: var(--sev); }
+.flag-category { font-family: var(--display); font-weight: 650; font-size: 1.02rem; }
+
+.badge {
+  margin-left: auto;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sev-ink);
+  background: var(--sev-soft);
+  border-radius: 999px;
+}
+
+.flag pre {
+  margin: 0 0 12px;
+  padding: 11px 14px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--surface-2);
+  border-left: 3px solid var(--sev);
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.flag p { margin: 0 0 8px; color: var(--ink-2); }
+.flag p:last-child { margin-bottom: 0; color: var(--ink); }
+.flag p strong { font-weight: 600; }
+
+.no-flags {
+  margin: 0;
+  padding: 14px 18px;
+  color: #166534;
+  font-weight: 600;
+  background: var(--green-soft);
+  border: 1px solid var(--green-line);
+  border-radius: 8px;
+}
+
+.section-title {
+  margin: 28px 0 10px;
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .flag { animation: settle 0.5s var(--ease) backwards; animation-delay: calc(var(--n, 0) * 80ms + 120ms); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meter-fill, .meter-flag { transition: none; }
+}
+
+@keyframes settle { from { opacity: 0; transform: translateY(14px); } }

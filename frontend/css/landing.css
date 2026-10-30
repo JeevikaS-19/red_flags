@@ -1,0 +1,310 @@
+/* Landing page: three full-screen acts on a dark ground. */
+
+:root {
+  --bg: #0b0d12;
+  --panel: #11141b;
+  --line: #232a38;
+  --text: #e8eaf0;
+  --soft: #cbd1db;
+  --muted: #9aa3b2;
+  --red: #dc2626;
+  --red-hot: #f87171;
+  --green: #22c55e;
+  --slate: #3a4254;
+
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --display: "Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--bg); scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible { outline: 2px solid var(--red-hot); outline-offset: 3px; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.act {
+  position: relative;
+  display: flex;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.layer { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* ---------- Act 1: hero ---------- */
+
+.act-hero {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse 55% 45% at 50% 52%, rgba(220, 38, 38, 0.16), transparent 70%),
+    var(--bg);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.hero-content .wave-flag { width: 104px; height: auto; overflow: visible; filter: drop-shadow(0 10px 30px rgba(220, 38, 38, 0.45)); }
+
+.hero-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(3.4rem, 14vw, 10.5rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #ff7070 0%, #dc2626 52%, #8f1414 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 8px 28px rgba(220, 38, 38, 0.3));
+}
+
+.hero-tagline {
+  max-width: 28em;
+  margin: 6px 0 0;
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.scroll-cue {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-left: -22px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  transition: border-color 0.2s ease;
+}
+
+.scroll-cue:hover { border-color: var(--red-hot); }
+
+.scroll-cue span {
+  width: 10px;
+  height: 10px;
+  margin-top: -4px;
+  border-right: 2px solid var(--soft);
+  border-bottom: 2px solid var(--soft);
+  transform: rotate(45deg);
+}
+
+/* ---------- Act 2: the problem ---------- */
+
+.act-problem {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  align-items: center;
+  gap: 56px;
+  padding: 96px 6vw;
+  background: var(--panel);
+}
+
+.problem-copy h2 {
+  margin: 0 0 22px;
+  font-family: var(--display);
+  font-size: clamp(2.6rem, 5.5vw, 4.4rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.problem-copy > p {
+  max-width: 32em;
+  margin: 0 0 36px;
+  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+  line-height: 1.75;
+  color: var(--soft);
+}
+
+.research {
+  max-width: 34em;
+  padding: 20px 22px;
+  background: rgba(220, 38, 38, 0.07);
+  border-left: 3px solid var(--red);
+  border-radius: 4px 10px 10px 4px;
+}
+
+.research-label { display: block; margin-bottom: 8px; font-size: 0.85rem; font-weight: 600; color: var(--red-hot); }
+.research p { margin: 0 0 12px; color: var(--muted); }
+.research ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+.research li { margin-bottom: 4px; }
+.research a { color: var(--red-hot); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.research a:hover { color: #fca5a5; }
+
+/* The 100-skill field: 26 of the flags turn red. */
+.field-wrap { margin: 0; }
+
+.field {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: clamp(6px, 1.2vw, 14px);
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.skill-cell { --k: 0; aspect-ratio: 3 / 4; color: var(--slate); }
+.skill-cell svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.skill-cell.bad.is-red { color: #ef4444; }
+
+.field-wrap figcaption {
+  max-width: 520px;
+  margin: 22px auto 0;
+  font-size: 1.05rem;
+  color: var(--muted);
+}
+
+.field-wrap figcaption strong {
+  font-family: var(--display);
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--red-hot);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Act 3: the solution ---------- */
+
+.act-solution {
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  background: var(--bg);
+}
+
+.solution-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 44px;
+  max-width: 760px;
+  padding: 56px 32px;
+  text-align: center;
+  background: radial-gradient(ellipse at center, rgba(11, 13, 18, 0.94) 35%, rgba(11, 13, 18, 0) 72%);
+}
+
+.solution-text {
+  position: relative;
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.5rem, 3.4vw, 2.3rem);
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+
+.solution-text .ghost { display: block; visibility: hidden; }
+.solution-text .live { position: absolute; inset: 0; }
+
+.caret {
+  display: inline-block;
+  width: 3px;
+  height: 1em;
+  margin-left: 3px;
+  vertical-align: text-bottom;
+  background: var(--red-hot);
+}
+
+.caret.is-done { display: none; }
+
+.start-btn {
+  display: inline-block;
+  padding: 17px 44px;
+  font-family: var(--font);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #fff;
+  background: var(--red);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(220, 38, 38, 0.3);
+  transition: transform 0.2s var(--ease), box-shadow 0.2s ease, background-color 0.2s ease, opacity 0.5s ease;
+}
+
+.start-btn:hover { background: #b91c1c; transform: translateY(-2px); box-shadow: 0 16px 40px rgba(220, 38, 38, 0.4); }
+.start-btn:active { transform: translateY(0); }
+
+/* ---------- Motion ---------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-content > * { animation: settle 0.8s var(--ease) backwards; }
+  .hero-content > .hero-title { animation-delay: 0.2s; }
+  .hero-content > .hero-tagline { animation-delay: 0.4s; }
+
+  .hero-content .pole, .hero-content .finial, .hero-content .cloth { transform-box: fill-box; }
+  .hero-content .pole { transform-origin: 50% 100%; animation: rise 0.8s var(--ease) backwards; }
+  .hero-content .finial { transform-origin: 50% 50%; animation: pop 0.4s var(--ease) 0.7s backwards; }
+  .hero-content .cloth { transform-origin: 0 50%; animation: unfurl 0.9s var(--ease) 0.65s backwards; }
+  .hero-content > .wave-flag { animation: none; }
+
+  .scroll-cue span { animation: nudge 1.8s ease-in-out infinite; }
+  .caret { animation: blink 0.9s steps(1) infinite; }
+
+  /* flags turn red one by one once the field scrolls into view */
+  .field.is-playing .skill-cell.bad { animation: turn-red 0.7s var(--ease) both; animation-delay: calc(var(--k) * 90ms + 300ms); }
+  .js .solution-content .start-btn:not(.is-ready) { opacity: 0; transform: translateY(10px); pointer-events: none; }
+}
+
+@keyframes settle { from { opacity: 0; transform: translateY(16px); } }
+@keyframes rise { from { transform: scaleY(0); } }
+@keyframes pop { from { transform: scale(0); } }
+@keyframes unfurl { from { transform: scaleX(0); opacity: 0; } }
+@keyframes nudge { 0%, 100% { transform: translateY(0) rotate(45deg); } 50% { transform: translateY(5px) rotate(45deg); } }
+@keyframes blink { 50% { opacity: 0; } }
+
+@keyframes turn-red {
+  from { color: var(--slate); transform: translateY(-14px) scale(0.85); }
+  45% { color: #ef4444; transform: translateY(2px) scale(1.2) rotate(-5deg); }
+  to { color: #ef4444; transform: none; }
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 900px) {
+  .act-problem { grid-template-columns: 1fr; gap: 40px; padding: 72px 24px; }
+  .hero-content .wave-flag { width: 84px; }
+}
