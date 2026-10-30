@@ -1,15 +1,25 @@
 """Gemini analysis step for SkillGuard: skill code + retrieved patterns -> risk report."""
 
 import json
+import logging
 import os
 import re
+import time
 
 from google import genai
 from google.genai import types
+from google.genai.errors import APIError
 from pydantic import BaseModel, Field
 
-MODEL = os.environ.get("SKILLGUARD_MODEL", "gemini-3.8-flash")
+log = logging.getLogger("skillguard")
+
+# flash-lite answers in 1-2s and matched 3.6-flash's verdicts on the test skills (3.6 takes 15-20s).
+# Set SKILLGUARD_MODEL=gemini-3.6-flash for slower, more thorough reviews.
+MODEL = os.environ.get("SKILLGUARD_MODEL", "gemini-3.5-flash-lite")
+FALLBACK_MODEL = os.environ.get("SKILLGUARD_FALLBACK_MODEL", "gemini-3.6-flash")
 MAX_OUTPUT_TOKENS = 4000
+RETRY_CODES = (429, 503)
+RETRY_DELAYS = (1, 3)  # seconds between attempts on the same model
 
 SYSTEM_PROMPT = """You are SkillGuard, a security reviewer for Claude skills (SKILL.md files and the instructions or code they contain).
 
@@ -91,17 +101,43 @@ Return the JSON report now."""
 
 
 def analyze_skill(client: genai.Client, skill_code: str, patterns: list[dict]) -> RiskReport:
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=build_user_prompt(skill_code, patterns),
-        config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            max_output_tokens=MAX_OUTPUT_TOKENS,
-            response_mime_type="application/json",
-        ),
-    )
+    response = _generate_with_retry(client, skill_code, patterns)
     report = RiskReport.model_validate(parse_json(response.text or ""))
     return enforce_evasion_rules(report)
+
+
+def _is_retryable(exc: Exception) -> bool:
+    """Rate limits, overload (429/503) and timeouts usually clear on retry or on another model."""
+    if isinstance(exc, APIError):
+        return exc.code in RETRY_CODES
+    return "timeout" in type(exc).__name__.lower()
+
+
+def _generate_with_retry(client: genai.Client, skill_code: str, patterns: list[dict]):
+    """Try the main model with a few retries, then the fallback model, before giving up."""
+    contents = build_user_prompt(skill_code, patterns)
+    config = types.GenerateContentConfig(
+        system_instruction=SYSTEM_PROMPT,
+        max_output_tokens=MAX_OUTPUT_TOKENS,
+        response_mime_type="application/json",
+    )
+
+    models = [MODEL] if FALLBACK_MODEL == MODEL else [MODEL, FALLBACK_MODEL]
+    for model_index, model in enumerate(models):
+        is_last_model = model_index == len(models) - 1
+        for delay in (*RETRY_DELAYS, None):
+            try:
+                return client.models.generate_content(model=model, contents=contents, config=config)
+            except Exception as exc:
+                if not _is_retryable(exc):
+                    raise
+                if delay is None:
+                    if is_last_model:
+                        raise
+                    log.warning("%s still unavailable, falling back to %s", model, models[model_index + 1])
+                    break
+                log.warning("%s unavailable (%s), retrying in %ss", model, type(exc).__name__, delay)
+                time.sleep(delay)
 
 
 EVASION_NOTE = "Skill attempted to suppress security analysis"

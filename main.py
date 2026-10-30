@@ -9,6 +9,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from google import genai
+from google.genai import types
 from pydantic import BaseModel
 
 from analyzer import analyze_skill
@@ -19,6 +20,7 @@ log = logging.getLogger("skillguard")
 logging.basicConfig(level=logging.INFO)
 
 MAX_SKILL_CHARS = 200_000
+GEMINI_TIMEOUT_MS = 45_000  # per request; a stalled model then falls back instead of hanging
 FRONTEND_DIR = Path(__file__).parent / "frontend"
 
 
@@ -100,7 +102,7 @@ def run_scan(skill_code: str) -> dict:
 
     patterns = state.kb.retrieve(skill_code)
     try:
-        report = analyze_skill(genai.Client(), skill_code, patterns)
+        report = analyze_skill(genai.Client(http_options=types.HttpOptions(timeout=GEMINI_TIMEOUT_MS)), skill_code, patterns)
     except Exception as exc:
         log.exception("Gemini analysis failed")
         raise HTTPException(status_code=502, detail=f"Gemini analysis failed: {exc}")
