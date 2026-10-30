@@ -49,6 +49,41 @@ def test_risk_report_rejects_out_of_range_score():
         analyzer.RiskReport.model_validate(_report(overall_risk_score=150))
 
 
+# ---------- permissions and suggested changes ----------
+
+def test_report_accepts_permissions_and_suggested_changes():
+    report = analyzer.RiskReport.model_validate(_report(
+        permissions=[{"name": "Run shell commands", "detail": "runs git", "level": "low"}],
+        suggested_changes=[{"snippet": "bad line", "action": "replace", "replacement": "good line", "reason": "safer"}]))
+    assert report.permissions[0].level == "low"
+    assert report.suggested_changes[0].replacement == "good line"
+
+
+def test_new_fields_default_to_empty_for_older_replies():
+    report = analyzer.RiskReport.model_validate(_report())
+    assert report.permissions == [] and report.suggested_changes == []
+
+
+def test_suggested_change_defaults_to_remove():
+    change = analyzer.SuggestedChange.model_validate({"snippet": "x"})
+    assert change.action == "remove" and change.replacement == ""
+
+
+def test_system_prompt_asks_for_permissions_and_changes():
+    assert "PERMISSIONS" in analyzer.SYSTEM_PROMPT and "SUGGESTED CHANGES" in analyzer.SYSTEM_PROMPT
+    assert '"suggested_changes"' in analyzer.SYSTEM_PROMPT and '"permissions"' in analyzer.SYSTEM_PROMPT
+
+
+def test_evasion_rule_keeps_permissions_and_changes():
+    flag = {"category": "evasion_attempt", "severity": "critical", "snippet": "s", "explanation": "e", "recommendation": "r"}
+    report = analyzer.analyze_skill(_client(_response(_report(
+        risk_flags=[flag], overall_risk_score=20, safe_to_install=True,
+        permissions=[{"name": "Network access", "level": "high"}],
+        suggested_changes=[{"snippet": "s", "action": "remove"}]))), "x", [])
+    assert report.overall_risk_score == 100
+    assert len(report.permissions) == 1 and len(report.suggested_changes) == 1
+
+
 # ---------- prompt ----------
 
 def test_user_prompt_wraps_skill_as_untrusted_and_includes_patterns():

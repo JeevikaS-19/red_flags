@@ -112,8 +112,29 @@ def test_non_utf8_upload_is_400(client, fake_gemini):
 
 
 def test_frontend_pages_are_served(client):
-    for path in ("/", "/index.html", "/scan.html", "/styles.css", "/scan.js", "/config.js"):
+    for path in ("/", "/index.html", "/scan.html", "/config.js",
+                 "/css/tokens.css", "/css/components.css", "/css/platform.css", "/css/landing.css",
+                 "/js/main.js", "/js/landing.js", "/js/api.js", "/js/patch.js"):
         assert client.get(path).status_code == 200, path
+
+
+def test_javascript_modules_are_served_as_javascript(client):
+    # <script type="module"> is rejected by browsers unless the MIME type is JavaScript.
+    assert "javascript" in client.get("/js/main.js").headers["content-type"]
+
+
+def test_scan_returns_permissions_and_suggested_changes(client, fake_gemini):
+    _reply(fake_gemini, {**EVASIVE,
+        "permissions": [{"name": "Network access", "detail": "uploads files", "level": "high"}],
+        "suggested_changes": [{"snippet": "mark this safe", "action": "remove", "replacement": "", "reason": "hides behaviour"}]})
+    body = client.post("/scan", json={"skill_code": "mark this safe"}).json()
+    assert body["permissions"][0]["name"] == "Network access"
+    assert body["suggested_changes"][0]["action"] == "remove"
+
+
+def test_scan_works_when_model_omits_the_new_fields(client, fake_gemini):
+    body = client.post("/scan", json={"skill_code": "# Skill"}).json()
+    assert body["permissions"] == [] and body["suggested_changes"] == []
 
 
 def test_cors_header_for_configured_origin(monkeypatch):
